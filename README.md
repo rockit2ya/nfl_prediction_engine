@@ -3,7 +3,10 @@
 A Python-based sports analytics engine designed to detect betting edges for **Super Bowl LX (February 8, 2026)**. This project utilizes advanced NFL metrics, specifically **Expected Points Added (EPA)**, combined with a sophisticated blending of momentum and stability weights.
 
 <video src="https://github.com/user-attachments/assets/dd3eee6d-319b-4315-981a-bcf7dcfd71dd" controls="controls" poster="https://github.com/user-attachments/assets/2f29ab8b-bd31-4619-86f5-c350e4648316" style="max-width: 100%; border-radius: 10px;">
+Your browser does not support the video tag.
 </video>
+
+*The 41-second session above demonstrates the 70/30 Blended Model logic and final edge detection.*
 
 
 ## 🚀 Features
