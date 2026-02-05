@@ -112,7 +112,7 @@ The "Edge" is the delta between the model's **Fair Line** and the **Market Sprea
 $$Edge = |ModelSpread - MarketSpread|$$
 
 
-> **Signal Threshold:** Any detected Edge greater than 2 points is flagged as a high-value opportunity, suggesting the market has mispriced the game based on current efficiency data.
+> **Signal Threshold:** Any detected Edge `> 2.0 points` is flagged as a high-value opportunity, suggesting the market has mispriced the game based on current efficiency data.
 
 
 ---
@@ -136,11 +136,68 @@ $$ProjectedSpread = (BlendedEPA_{SEA} - BlendedEPA_{NE}) \times 22.0$$
 
 ### 🧪 Practical Application
 
-By using this multiplier, the engine ensures that typical EPA differentials—which usually fall between  and —result in spreads that align with professional sportsbook logic.
+By using this multiplier, the engine ensures that typical EPA differentials—which usually fall between `-0.20` and `+0.20`—result in spreads that align with professional sportsbook logic.
 
-* **Example:** A  EPA advantage projects a **2.2-point** lead.
-* **Example:** A  EPA advantage projects a **4.4-point** lead.
+* **Example:** A `+0.1` EPA advantage projects a **2.2-point** lead.
+* **Example:** A `+0.2` EPA advantage projects a **4.4-point** lead.
 
+
+---
+
+
+# 🏆 Final Verdict: Super Bowl LX Prediction
+
+This is the high-level summary of the engine's output for **Super Bowl LX (February 8, 2026)** at Levi's Stadium. The following data points represent the final synthesis of our **70/30 Blended Model**.
+
+## 📊 The Numerical Signal
+
+| Metric | Value |
+| --- | --- |
+| **Market Spread** | Seahawks -4.5 |
+| **Model "Fair Line"** | Seahawks -1.38 |
+| **Calculated Edge** | **3.12 Points** |
+| **Moneyline +EV** | **+12.0% (Patriots +195)** |
+
+### 🧮 Edge Calculation
+
+The engine identified this signal by calculating the absolute variance between the market and our projected spread:
+
+$$Edge = \lvert ModelSpread - MarketSpread \rvert$$
+
+$$\lvert -1.38 - (-4.5) \rvert = 3.12$$
+
+> **Signal Status:** 🟢 **STRONG BUY** (Edge `> 2.0` points)
+
+---
+
+## 🧠 Logic & Synthesis
+
+The verdict is driven by three critical factors identified during the data ingestion process:
+
+### 1. The Stability Anchor (70%)
+
+The 5-game rolling average favors the **New England Patriots'** defensive consistency. Their ability to limit explosive plays (Bottom 5 in EPA allowed on 20+ yard attempts) provides a high floor against the Seahawks' vertical passing game.
+
+### 2. Momentum Spike (30%)
+
+While the **Seattle Seahawks** showed a significant offensive surge in the Divisional and Championship rounds, their 3-game "heat" window was not enough to overcome the structural defensive advantages of the Patriots in our blended weighting.
+
+### 3. Injury Penalties
+
+The manual override was triggered for two specific key absences, which narrowed the efficiency gap significantly:
+
+* **Charles Cross (SEA - LT):** Absence resulted in a -0.06 EPA penalty to Seattle's pass protection efficiency.
+* **Secondary Depth:** Impact of the **Nick Emmanwori** and **Robert Spillane** status was normalized across the 3-game window.
+
+
+### 4. The Result ###
+The model projects a much tighter game than the current market consensus. With a 3.12-point Edge (surpassing our >2.0 signal threshold), the engine flags the Patriots +4.5 as a high-value opportunity.
+
+---
+
+## ⚠️ Disclaimer
+
+This verdict is based on data available as of **February 5, 2026**. If active roster designations change prior to kickoff, the engine must be re-run to update the `InjuryPenalty` variable.
 
 ---
 
