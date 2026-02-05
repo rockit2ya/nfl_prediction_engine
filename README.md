@@ -50,7 +50,7 @@ A Python-based sports analytics engine designed to detect betting edges for **Su
 
 1. **Activate Environment:**
    ```bash
-   source nfl_engine/bin/activate
+   source nfl_predict/bin/activate
 
    ```
 
