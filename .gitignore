@@ -1,0 +1,20 @@
+# Virtual Environment
+nfl_predict/
+venv/
+.venv/
+env/
+
+# Python Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# OS Specific Files
+.DS_Store
+Thumbs.db
+
+# Data / Temp Files
+*.csv
+*.parquet
+.idea/
+.vscode/
