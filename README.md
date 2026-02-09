@@ -15,7 +15,7 @@ While the `nfl_prediction_engine` provided a solid baseline using Season-to-Date
 3. **Environmental Suppression:** Weather is no longer just a "note"—it is a mathematical suppressor. High-wind and low-temp scenarios now compress the expected spread, preventing "trap" bets on favorites in outdoor coastal stadiums.
 4. **Market Integration:** The new project features **Live Odds-API integration** for real-time CLV (Closing Line Value) auditing, whereas this engine required manual data entry.
 
-**Please migrate your local clones to the [nfl_situational_engine](https://github.com/your-username/nfl_situational_engine) for the most accurate 2026 Season analysis.**
+**Please migrate your local clones to the [nfl_situational_engine](https://github.com/rockit2ya/nfl_situational_engine) for the most accurate 2026 Season analysis.**
 
 ---
 
