@@ -5,7 +5,7 @@
   "_nba_equivalent": "Ported from NBA Prediction Engine v3.36 framework",
 
   "model_params": {
-    "REGRESS_FACTOR": 0.60,
+    "REGRESS_FACTOR": 0.6,
     "_regress_note": "NFL has more year-to-year variance than NBA; regress harder (60% team, 40% baseline)",
 
     "RECENT_BLEND_WEIGHT": 0.35,
@@ -38,7 +38,7 @@
     "QB_BACKUP_QUALITY_FACTOR": 0.6,
     "_backup_note": "Reduce QB tax by this fraction if backup is competent (above-average backup). 0.6 = poor backup, mostly full penalty",
 
-    "SOS_WEIGHT": 0.10,
+    "SOS_WEIGHT": 0.1,
     "_sos_note": "Strength of schedule matters more in NFL (fewer games, more variance). 0.10 vs NBA 0.08",
 
     "SOS_CAP": 2.0,
@@ -100,8 +100,8 @@
 
     "ADAPTIVE_BLEND_DEVIATION_THRESHOLD": 4.0,
     "_adapt_note": "L4 deviation from season > 4 pts → boost recent weight. Higher threshold than NBA due to weekly variance",
-    "ADAPTIVE_BLEND_MAX_WEIGHT": 0.50,
-    "ADAPTIVE_BLEND_MIN_WEIGHT": 0.20
+    "ADAPTIVE_BLEND_MAX_WEIGHT": 0.5,
+    "ADAPTIVE_BLEND_MIN_WEIGHT": 0.2
   },
 
   "guard_rails": {
@@ -159,7 +159,16 @@
       "HOME_PICK_PENALTY",
       "WEATHER_RISK",
       "SHORT_WEEK"
-    ]
+    ],
+
+    "fade_hard_tags": [
+      "QB_INJURY",
+      "INJURY_BREAKER",
+      "MARKET_DIVERGENCE",
+      "BLOWOUT_RISK",
+      "TEAM_BLACKLIST"
+    ],
+    "_fade_hard_note": "High-conviction triggers → FADE (pick is likely wrong). All other triggers → SHADOW (uncertainty)."
   },
 
   "last_updated": "2026-03-16",

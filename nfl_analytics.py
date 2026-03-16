@@ -978,13 +978,19 @@ def evaluate_guard_rails(home_team, away_team, pick_side, edge, ecs, components,
         reasons.append('BLOWOUT_RISK')
 
     # Determine bet type
+    # FADE = high-conviction triggers where the pick is likely wrong
+    # SHADOW = uncertainty triggers where the pick may be fine but risk is elevated
     if reasons:
-        fade_tags = _gr('fade_eligible_tags', [])
-        if any(r in fade_tags for r in reasons):
-            bet_type = 'SHADOW'
+        fade_hard = _gr('fade_hard_tags', [
+            'QB_INJURY', 'INJURY_BREAKER', 'MARKET_DIVERGENCE',
+            'BLOWOUT_RISK', 'TEAM_BLACKLIST',
+        ])
+        if any(r in fade_hard for r in reasons):
+            bet_type = 'FADE'
+            guard_rails_str = f"FADE: {', '.join(reasons)}"
         else:
             bet_type = 'SHADOW'
-        guard_rails_str = f"SHADOW: {', '.join(reasons)}"
+            guard_rails_str = f"SHADOW: {', '.join(reasons)}"
     else:
         bet_type = 'REAL'
         guard_rails_str = 'CLEAR'

@@ -132,18 +132,35 @@ def fetch_team_stats(season=None):
 def fetch_recent_stats(num_weeks=4):
     """Fetch recent game results to compute last-N-weeks form.
 
-    This is an approximation using scoreboard data for recent weeks.
+    Uses ESPN scoreboard API with explicit week parameters to retrieve
+    the correct past weeks instead of fetching only the current week.
     Returns dict similar to fetch_team_stats but for recent games only.
     """
-    recent_ppg = {}  # team → [list of recent PPG]
-    recent_oppg = {}  # team → [list of recent OPPG]
+    recent_ppg = {}  # team → [list of recent scores]
+    recent_oppg = {}  # team → [list of opponent scores]
 
-    for week_offset in range(num_weeks):
+    # Determine current week from default scoreboard response
+    try:
+        current_data = _fetch_json(ESPN_SCOREBOARD_URL)
+        current_week = current_data.get('week', {}).get('number', 1)
+        season_type = current_data.get('season', {}).get('type', 2)
+    except Exception:
+        current_week = 1
+        season_type = 2
+
+    for offset in range(num_weeks):
+        target_week = current_week - offset
+        if target_week < 1:
+            break
         try:
-            params = {'week': f'current-{week_offset}' if week_offset > 0 else 'current'}
-            # Use simple week parameter
-            data = _fetch_json(ESPN_SCOREBOARD_URL)
+            params = {'week': target_week, 'seasontype': season_type}
+            data = _fetch_json(ESPN_SCOREBOARD_URL, params)
             for event in data.get('events', []):
+                # Only include completed games
+                completed = event.get('status', {}).get('type', {}).get('completed', False)
+                if not completed:
+                    continue
+
                 competitors = event.get('competitions', [{}])[0].get('competitors', [])
                 if len(competitors) < 2:
                     continue
@@ -191,27 +208,87 @@ def fetch_recent_stats(num_weeks=4):
     return stats
 
 
-def compute_sos(stats):
-    """Compute simple SOS from win-loss records.
+def _fetch_season_matchups():
+    """Fetch all completed regular-season results to build opponent map.
 
-    Placeholder: proper SOS would use actual opponents' records.
+    Iterates through each completed week of the current season to build
+    a mapping of team → [(opponent, team_score, opp_score), ...].
+
+    Returns: {team_name: [(opponent_name, team_score, opp_score), ...]}
+    """
+    try:
+        current_data = _fetch_json(ESPN_SCOREBOARD_URL)
+        current_week = current_data.get('week', {}).get('number', 1)
+        season_type = current_data.get('season', {}).get('type', 2)
+    except Exception:
+        return {}
+
+    matchups = {}
+    for week in range(1, current_week + 1):
+        try:
+            params = {'week': week, 'seasontype': season_type}
+            data = _fetch_json(ESPN_SCOREBOARD_URL, params)
+            for event in data.get('events', []):
+                completed = event.get('status', {}).get('type', {}).get('completed', False)
+                if not completed:
+                    continue
+                comps = event.get('competitions', [{}])[0].get('competitors', [])
+                if len(comps) < 2:
+                    continue
+                t1 = resolve_team_name(comps[0].get('team', {}).get('displayName', ''))
+                t2 = resolve_team_name(comps[1].get('team', {}).get('displayName', ''))
+                s1 = int(comps[0].get('score', 0))
+                s2 = int(comps[1].get('score', 0))
+                if t1 and t2:
+                    matchups.setdefault(t1, []).append((t2, s1, s2))
+                    matchups.setdefault(t2, []).append((t1, s2, s1))
+        except Exception:
+            continue
+
+    return matchups
+
+
+def compute_sos(stats, matchups=None):
+    """Compute strength of schedule from actual opponents' records.
+
+    When matchups are provided (from _fetch_season_matchups), calculates
+    real SOS as the average opponent win percentage minus league average,
+    scaled to spread-point range.
+
+    Falls back to neutral (0.0) if no matchup data is available.
+
     Returns: {team: sos_value} where positive = faced stronger opponents.
     """
     if not stats:
         return {}
 
-    avg_win_pct = 0.5
-    sos = {}
+    # Build win percentage lookup from standings
+    win_pct = {}
     for team, s in stats.items():
         games = s.get('games', 0)
-        if games == 0:
+        win_pct[team] = s.get('wins', 0) / games if games > 0 else 0.5
+
+    league_avg_wp = sum(win_pct.values()) / len(win_pct) if win_pct else 0.5
+
+    sos = {}
+    if matchups:
+        # Real SOS: average opponent win percentage
+        for team in stats:
+            opps = matchups.get(team, [])
+            if not opps:
+                sos[team] = 0.0
+                continue
+            opp_wps = [win_pct.get(opp_name, 0.5) for opp_name, _, _ in opps]
+            avg_opp_wp = sum(opp_wps) / len(opp_wps)
+            # Positive = faced stronger-than-average opponents
+            sos[team] = round((avg_opp_wp - league_avg_wp) * 6, 3)
+        total_games = sum(len(v) for v in matchups.values()) // 2
+        print(f"  [SOS] Computed from {total_games} actual game results")
+    else:
+        # No opponent data — assume neutral SOS for all teams
+        print("  [SOS] No matchup data available — setting all teams to 0.0")
+        for team in stats:
             sos[team] = 0.0
-            continue
-        win_pct = s.get('wins', 0) / games
-        # Teams with high win % likely faced weaker opponents (negative SOS)
-        # Teams with low win % that still have good PPG faced stronger opponents
-        # Simplified: SOS ≈ deviation from 0.500
-        sos[team] = round((avg_win_pct - win_pct) * 2, 3)
 
     return sos
 
@@ -246,8 +323,10 @@ def main():
 
     print("[NFL] Computing strength of schedule...")
     try:
-        stats = fetch_team_stats()  # reuse if possible
-        sos = compute_sos(stats)
+        stats = fetch_team_stats()
+        print("  [SOS] Fetching season matchups for opponent records...")
+        matchups = _fetch_season_matchups()
+        sos = compute_sos(stats, matchups)
         with open(SOS_CACHE, 'w') as f:
             json.dump(sos, f, indent=2)
         print(f"[SUCCESS] SOS: {len(sos)} teams → {os.path.basename(SOS_CACHE)}")
