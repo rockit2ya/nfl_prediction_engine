@@ -1,0 +1,167 @@
+{
+  "_comment": "NFL Prediction Engine — Central Model Configuration (v1.0)",
+  "_usage": "All tunable parameters in one place. Edit here instead of source code.",
+  "_docs": "See GLOSSARY.md for descriptions of each field.",
+  "_nba_equivalent": "Ported from NBA Prediction Engine v3.36 framework",
+
+  "model_params": {
+    "REGRESS_FACTOR": 0.60,
+    "_regress_note": "NFL has more year-to-year variance than NBA; regress harder (60% team, 40% baseline)",
+
+    "RECENT_BLEND_WEIGHT": 0.35,
+    "_recent_note": "35% last-4 games, 65% season. NFL has 17 games (small sample), so season matters more",
+
+    "RESIDUAL_HFA": 0.0,
+    "_residual_note": "Home-field advantage when using location splits (data-driven HFA)",
+
+    "FLAT_HFA": 2.5,
+    "_hfa_note": "Home-field advantage in points. NFL average ~2.5 pts (declining from historical 3.0)",
+
+    "MARKET_ANCHOR_WEIGHT": 0.65,
+    "_anchor_note": "65% market, 35% model. Same as NBA — markets are efficient",
+
+    "QB_IMPACT_WEIGHT": 1.0,
+    "_qb_note": "QB is 2-3x more impactful than any NBA player. Full weight on QB star tax",
+
+    "NON_QB_IMPACT_DAMPENER": 0.25,
+    "_nonqb_note": "Non-QB injuries dampened to 25% of raw impact (vs NBA 30%). NFL has deeper position groups",
+
+    "STAR_TAX_TEAM_CAP": 10,
+    "_cap_note": "Max total star tax per team (±10 pts). Lower than NBA (12) because NFL rosters are deeper",
+
+    "STAR_TAX_IMPACT_CAP": 12,
+    "_impact_cap_note": "Max per-player impact. QB injuries can swing 8-12 pts",
+
+    "STAR_TAX_KEY_PLAYER_THRESHOLD": 2.0,
+    "_key_note": "Flag as key player if impact >= 2.0 pts",
+
+    "QB_BACKUP_QUALITY_FACTOR": 0.6,
+    "_backup_note": "Reduce QB tax by this fraction if backup is competent (above-average backup). 0.6 = poor backup, mostly full penalty",
+
+    "SOS_WEIGHT": 0.10,
+    "_sos_note": "Strength of schedule matters more in NFL (fewer games, more variance). 0.10 vs NBA 0.08",
+
+    "SOS_CAP": 2.0,
+    "_sos_cap_note": "Higher cap than NBA (1.5) to allow bigger SOS adjustments",
+
+    "BYE_WEEK_ADVANTAGE": 1.5,
+    "_bye_note": "Team coming off bye week gets 1.5 pt boost (rest + preparation)",
+
+    "SHORT_WEEK_PENALTY": -1.5,
+    "_short_note": "Thursday game after Sunday = short week penalty",
+
+    "MONDAY_TO_SUNDAY_PENALTY": -0.5,
+    "_mon_note": "Monday night to Sunday = slightly short turnaround",
+
+    "DIVISIONAL_RIVALRY_DAMPENER": 0.85,
+    "_div_note": "Divisional games are closer; dampen edge by 15%. Teams know each other well",
+
+    "WEATHER_WIND_THRESHOLD": 15,
+    "_wind_note": "Wind above 15mph starts affecting passing game",
+
+    "WEATHER_WIND_PENALTY_PER_MPH": -0.1,
+    "_wind_pen_note": "Each mph above threshold reduces total by 0.1 pts (affects totals more than spread)",
+
+    "WEATHER_COLD_THRESHOLD": 32,
+    "_cold_note": "Below 32°F starts favoring run-heavy teams",
+
+    "WEATHER_COLD_ADJ_PER_DEGREE": -0.05,
+    "_cold_adj_note": "Each degree below threshold slightly benefits defensive/run teams",
+
+    "WEATHER_PRECIP_PENALTY": -1.0,
+    "_precip_note": "Rain/snow reduces scoring expectation (totals mostly)",
+
+    "ALTITUDE_ADVANTAGE": 1.0,
+    "_altitude_note": "Denver home-field altitude boost (5280ft). Only team with meaningful altitude effect",
+
+    "MOTIVATION_PLAYOFF_CLINCH_ADJ": -0.5,
+    "_clinch_note": "Teams that clinched may rest starters. Slight penalty",
+
+    "MOTIVATION_ELIMINATION_BOOST": 0.5,
+    "_elim_note": "Teams fighting for playoff life get a boost",
+
+    "MOTIVATION_START_WEEK": 14,
+    "_motiv_week_note": "Motivation adjustments kick in Week 14+",
+
+    "TOTALS_HFA_BOOST": 1.0,
+    "_totals_hfa_note": "Home teams score slightly more (crowd energy, play-calling)",
+
+    "TOTALS_REGRESS_FACTOR": 0.65,
+    "_totals_reg_note": "Regress totals predictions harder to league mean",
+
+    "TOTALS_WEATHER_MULT": 1.0,
+    "_totals_weather_note": "Weather multiplier for totals adjustments (1.0 = full effect)",
+
+    "RLM_BONUS": 8,
+    "RLM_PENALTY": -6,
+    "RLM_MIN_MOVEMENT": 1.0,
+    "CROSS_BOOK_BONUS": 5,
+    "CROSS_BOOK_DISAGREE_THRESHOLD": 2.0,
+
+    "ADAPTIVE_BLEND_DEVIATION_THRESHOLD": 4.0,
+    "_adapt_note": "L4 deviation from season > 4 pts → boost recent weight. Higher threshold than NBA due to weekly variance",
+    "ADAPTIVE_BLEND_MAX_WEIGHT": 0.50,
+    "ADAPTIVE_BLEND_MIN_WEIGHT": 0.20
+  },
+
+  "guard_rails": {
+    "edge_cap": 10,
+    "min_edge": 6,
+    "_min_edge_note": "Lower than NBA (8) because NFL lines are tighter and edges smaller",
+
+    "injury_out_threshold": 3,
+    "_inj_note": "3+ key starters out triggers shadow (NFL starters more impactful than NBA)",
+
+    "injury_edge_override": 5,
+    "injury_tax_threshold": 4.0,
+
+    "market_divergence_threshold": 7,
+    "_div_thresh_note": "NFL lines are sharper. >7pt divergence is suspicious",
+
+    "qb_injury_auto_shadow": true,
+    "_qb_shadow_note": "If starting QB is OUT and model still picks that team, auto-shadow",
+
+    "low_confidence_ecs_threshold": 40,
+    "blowout_net_rating_threshold": 10,
+    "_blowout_note": "NFL blowouts happen with smaller rating gaps than NBA",
+
+    "max_bets_per_day": 5,
+    "_max_note": "NFL has fewer games per week (13-16 vs NBA ~15/day). Cap at 5 per slate",
+
+    "confidence_conflict_ecs_floor": 50,
+    "home_pick_edge_penalty": 1,
+    "_hpe_note": "Slight penalty for picking home team (public loves home teams, line inflated)",
+
+    "weather_auto_shadow_wind": 25,
+    "_weather_shadow_note": "Wind >25mph → auto-shadow spread bets (too unpredictable)",
+
+    "team_blacklist": [],
+    "_blacklist_note": "Start empty. Add teams where model systematically misfires after tracking data",
+
+    "team_star_tax_caution": {},
+    "_caution_note": "Start empty. Add teams where QB injury impact is over/under-estimated",
+
+    "team_boost": {
+      "_comment": "Teams with sustainable edges — prioritised in tiebreakers.",
+      "teams": []
+    },
+
+    "fade_eligible_tags": [
+      "LOW_EDGE",
+      "INJURY_BREAKER",
+      "QB_INJURY",
+      "MARKET_DIVERGENCE",
+      "CONFIDENCE_CONFLICT",
+      "TEAM_BLACKLIST",
+      "LOW_CONFIDENCE",
+      "DAILY_CAP",
+      "BLOWOUT_RISK",
+      "HOME_PICK_PENALTY",
+      "WEATHER_RISK",
+      "SHORT_WEEK"
+    ]
+  },
+
+  "last_updated": "2026-03-16",
+  "version": "1.0"
+}

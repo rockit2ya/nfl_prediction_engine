@@ -1,220 +1,159 @@
-# 🏈 Super Bowl LX Prediction Engine: Seahawks vs. Patriots
+# 🏈 NFL Prediction Engine v1.0
+
+A config-driven, edge-detection sports analytics engine for NFL game spreads. Ported from the [NBA Prediction Engine v3.36](https://github.com/rockit2ya/nba_prediction_engine) framework with NFL-specific adaptations for QB dominance, weather modeling, bye/short-week rest, divisional rivalry dampening, and EPA-based efficiency.
+
+> **Supersedes** the legacy Super Bowl LX one-off tool that previously lived in this repo.
 
 ---
 
-# ⛔️ DEPRECATED: Project Moved
+## Architecture
 
-> **Notice:** This repository is no longer maintained. It has been superseded by the **[nfl_situational_engine](https://github.com/rockit2ya/nfl_situational_engine)**.
+```
+┌─────────────────┐    ┌──────────────────┐    ┌──────────────────┐
+│  Data Fetchers   │───▶│  Core Analytics   │───▶│  Interactive UI   │
+│                  │    │                   │    │                   │
+│ nfl_data_fetcher │    │  nfl_analytics.py │    │  nfl_engine_ui.py │
+│ injury_scraper   │    │  model_config.json│    │                   │
+│ schedule_scraper │    │                   │    │  edge_analyzer.py │
+│ odds_api         │    └──────────────────┘    │  blowout_analysis │
+│ weather_fetcher  │                             └──────────────────┘
+└─────────────────┘
+         │
+         ▼
+┌──────────────────┐    ┌──────────────────┐
+│  Grading Loop     │    │  Utilities        │
+│                   │    │                   │
+│ update_results.py │    │ calculate_bankroll│
+│ post_mortem.py    │    │ snapshot_caches   │
+│ season_backtest   │    │ fetch_all_nfl_data│
+└──────────────────┘    └──────────────────┘
+```
 
-### ❓ Why the Change?
+## Key NFL Adaptations (vs. NBA Engine)
 
-While the `nfl_prediction_engine` provided a solid baseline using Season-to-Date (STD) metrics, the new **Situational Engine** offers a significantly more "sharp" approach by focusing on high-volatility variables that season averages often miss:
+| Concept | NBA Engine | NFL Engine |
+|---|---|---|
+| **Dominant Position** | N/A (team-based) | QB injury = full impact; non-QB dampened 75% |
+| **Rest Model** | Back-to-back penalty | Bye week (+1.5) / Short week (-1.5) |
+| **Home-Field Advantage** | 2.0 pts | 2.5 pts |
+| **Weather** | Not modeled | Wind, cold, precipitation, dome detection |
+| **Divisional Factor** | Not modeled | 0.85x dampener for division games |
+| **Pace Adjustment** | Yes (possessions) | No (fixed game structure) |
+| **Altitude** | Denver +1.0 | Denver +1.0 |
+| **High Signal Edge** | 5 pts | 4 pts (tighter NFL lines) |
+| **Min Edge for Bet** | 8 pts | 6 pts |
+| **Blowout Threshold** | Varies | 14 pts (2 TDs) |
+| **Season Length** | 82 games | 17 games (higher regression) |
 
-1. **Context over Averages:** Simple prediction models tend to overvalue teams with high season-long stats who are currently missing key personnel. The Situational Engine weights **real-time injury impacts** and **positional WAR** (Wins Above Replacement).
-2. **Trench Multipliers:** The new engine implements **Advanced Pressure Rate** logic. It recognizes that a high EPA offense can collapse entirely when facing a D-Line with a +10% pressure advantage.
-3. **Environmental Suppression:** Weather is no longer just a "note"—it is a mathematical suppressor. High-wind and low-temp scenarios now compress the expected spread, preventing "trap" bets on favorites in outdoor coastal stadiums.
-4. **Market Integration:** The new project features **Live Odds-API integration** for real-time CLV (Closing Line Value) auditing, whereas this engine required manual data entry.
+## Fair Line Formula
 
-**Please migrate your local clones to the [nfl_situational_engine](https://github.com/rockit2ya/nfl_situational_engine) for the most accurate 2026 Season analysis.**
+```
+raw_diff    = home_rating - away_rating  (regressed, blended season + recent)
+fair_line   = -(raw_diff + HFA + altitude - home_tax + away_tax
+                + schedule_adj + sos_adj + motivation_adj) + weather * 0.1
+```
 
----
+If divisional game: `fair_line *= DIVISIONAL_RIVALRY_DAMPENER (0.85)`
 
-A Python-based sports analytics engine designed to detect betting edges for **Super Bowl LX (February 8, 2026)**. This project utilizes advanced NFL metrics, specifically **Expected Points Added (EPA)**, combined with a sophisticated blending of momentum and stability weights.
-
-<video src="https://github.com/user-attachments/assets/dd3eee6d-319b-4315-981a-bcf7dcfd71dd" controls="controls" poster="https://github.com/user-attachments/assets/2f29ab8b-bd31-4619-86f5-c350e4648316" style="max-width: 100%; border-radius: 10px;">
-Your browser does not support the video tag.
-</video>
-
-_The 41-second session above demonstrates the 70/30 Blended Model logic and final edge detection._
-
----
-
-## 🚀 Features
-
-- **Blended Momentum Modeling:** Uses a weighted 70/30 approach, combining a 5-game stability window with a 3-game "heat" window to capture team evolution.
-- **Automated & Manual Data Retrieval:** Powered by `nflreadpy` for live play-by-play data, with a built-in manual override for injury reporting when server parquets are unavailable.
-- **Injury Weighting:** Dynamically penalizes team efficiency (EPA) based on the availability of star players (QB, T, S, LB).
-- **Edge Detection UI:** Compares calculated "Fair Lines" against real-time market spreads to identify +EV (Expected Value) opportunities.
-
----
-
-## 🛠️ Tech Stack
-
-- **Language:** Python 3.14.2
-- **Data Processing:** `polars` (ingestion) and `pandas` (analysis)
-- **Bridge:** `pyarrow` (facilitating high-speed Arrow-to-NumPy conversion)
-- **NFL Data:** `nflreadpy` (The 2026 nflverse standard)
-
----
-
-## 📦 Installation
-
-1. **Clone the Repository:**
-
-   ```bash
-   git clone https://github.com/your-username/nfl_prediction_engine.git
-   cd nfl_prediction_engine
-
-   ```
-
-2. **Set up the Virtual Environment:**
-
-   ```bash
-   python3 -m venv nfl_predict
-
-   ```
-
-3. **Install Dependencies:**
-
-   ```bash
-   python3 -m pip install -r requirements.txt
-
-   ```
+Final spread = blend of fair line (35%) + market line (65%).
 
 ---
 
-## 🎮 How to Use
+## Quick Start
 
-1. **Activate Environment:**
+```bash
+# Clone
+git clone https://github.com/rockit2ya/nfl_prediction_engine.git
+cd nfl_prediction_engine
 
-   ```bash
-   source nfl_predict/bin/activate
+# Set up environment
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
 
-   ```
+# (Optional) Set Odds API key
+export THE_ODDS_API_KEY="your_key_here"
 
-2. **Run Engine:**
+# Refresh all data
+./fetch_all_nfl_data.sh
 
-   ```bash
-   python3 engine_ui.py
+# Run the engine
+python3 nfl_engine_ui.py
+```
 
-   ```
+## File Reference
 
-3. **Analyze Output:**
-   If automated injury data returns a 404, the UI will prompt for manual entries. Use comma-separated names (e.g., Robert Spillane, Nick Emmanwori) to trigger efficiency penalties.
+### Core Engine
+| File | Purpose |
+|---|---|
+| `nfl_analytics.py` | Fair line calculation, edge/ECS scoring, guard rails |
+| `nfl_engine_ui.py` | Interactive terminal UI, game analysis, bet logging |
+| `model_config.json` | All tunable parameters and guard rail thresholds |
+| `nfl_teams_static.py` | 32-team metadata (divisions, domes, altitude) |
 
----
+### Data Fetchers
+| File | Source | Output |
+|---|---|---|
+| `nfl_data_fetcher.py` | ESPN API | `nfl_stats_cache.json`, `nfl_stats_recent_cache.json`, `nfl_sos_cache.json` |
+| `injury_scraper.py` | CBS Sports | `nfl_injuries.csv` |
+| `schedule_scraper.py` | ESPN | `nfl_schedule_cache.json` |
+| `odds_api.py` | The Odds API | `nfl_odds_cache.json` |
+| `weather_fetcher.py` | Open-Meteo | `nfl_weather_cache.json` |
 
-### Example Workflow:
+### Grading & Analysis
+| File | Purpose |
+|---|---|
+| `update_results.py` | Fetch final scores, grade bets, track CLV |
+| `post_mortem.py` | Lifetime dashboard, edge calibration, daily trends |
+| `edge_analyzer.py` | Detailed edge decomposition diagnostics |
+| `blowout_analysis.py` | Blowout risk scoring (14+ pt threshold) |
+| `season_backtest.py` | 17-week season replay analysis |
 
-1. **Data Sync:** The engine pulls the latest stats for Sam Darnold (SEA) and Drake Maye (NE).
-2. **Injury Scan:** It detects if New England's linebackers are "Out" and adjusts their defensive EPA accordingly.
-3. **Input:** You enter the current spread (e.g., `Patriots +4.5`).
-4. **Result:** The engine outputs the **Predicted Point Differential** and flags if there is a significant betting "Edge."
+### Utilities
+| File | Purpose |
+|---|---|
+| `calculate_bankroll.py` | Bankroll status display |
+| `snapshot_caches.py` | Archive weekly cache state |
+| `fetch_all_nfl_data.sh` | Refresh all data sources |
+| `bankroll.json` | Current bankroll state |
 
----
+## Weekly Workflow
 
-## 📈 Model Methodology
+```
+1. ./fetch_all_nfl_data.sh          # Refresh data (Tuesday/Wednesday)
+2. python3 nfl_engine_ui.py         # Analyze games, log bets
+3. python3 update_results.py now    # Grade after games finish (Sunday/Monday)
+4. python3 post_mortem.py           # Review performance
+5. python3 snapshot_caches.py       # Archive weekly state
+```
 
-The engine calculates a **Blended Power Rating** for each team to balance long-term stability with short-term momentum. This approach is designed to filter out "one-game wonders" while still respecting a team's current trajectory heading into Super Bowl LX.
+## Configuration
 
-### 🧮 The Prediction Formula
+All model parameters live in `model_config.json`. Key sections:
 
-The final rating is derived using a weighted calculation of **Expected Points Added (EPA)**:
+- **model_params**: Regression factor, blend weights, HFA, QB impact, weather thresholds, motivation
+- **guard_rails**: Edge caps, minimum edge, max bets per day, injury thresholds, fade-eligible tags
+- **adaptive_blend**: Auto-adjust market anchor weight based on MAE history
 
-$$BlendedEPA = (Rolling5gEPA \times 0.70) + (Rolling3gEPA \times 0.30) - (InjuryPenalty)$$
+## Environment Variables
 
-### 🔍 Component Breakdown
-
-- **70% Stability Anchor (5-Game Rolling EPA):** This baseline represents the team's "true identity" over the last month of play. It prevents the model from overreacting to a single explosive playoff game or a defensive fluke.
-- **30% Momentum Sensor (3-Game Rolling EPA):** This captures the "heat" of the team. It allows the model to shift toward teams peaking at the right time (e.g., the Seahawks' recent offensive surge or the Patriots' defensive dominance).
-- **Injury Penalty:** A flat deduction of **0.06 EPA** is applied for every identified "Star" player confirmed as out. This is manually input via the UI to bypass server 404 errors.
-- **Scaling Factor (22.0):** To convert abstract efficiency into a scoreboard projection, a historical constant of **22.0** is applied to the EPA differential.
-- _Example:_ A EPA advantage projects to a **2.2-point** lead on the spread.
-
-### 🎯 Betting Edge Logic
-
-The "Edge" is the delta between the model's **Fair Line** and the **Market Spread**:
-
-$$Edge = |ModelSpread - MarketSpread|$$
-
-> **Signal Threshold:** Any detected Edge `> 2.0 points` is flagged as a high-value opportunity, suggesting the market has mispriced the game based on current efficiency data.
-
----
-
-## 🧬 Model Validation: The 22.0 Multiplier
-
-To convert abstract efficiency (EPA) into a tangible scoreboard prediction (Points), the engine applies a scaling factor of **22.0**. This constant is derived from historical NFL regression analysis of performance versus margin of victory.
-
-### 📉 Derivation & Theory
-
-The relationship between EPA/play and point differential is the cornerstone of modern NFL analytics. The **22.0** multiplier is validated by the following data points:
-
-- **The Play Volume Constant:** An average NFL game consists of approximately **60 to 65 offensive plays** per team.
-- **Predictive Correlation:** Backtesting shows that a team with a **+1.0 EPA/play** advantage is roughly **22 points better** than their opponent on a neutral field.
-
-### 🧮 Conversion Logic
-
-The conversion from efficiency to point spread is expressed as:
-
-$$ProjectedSpread = (BlendedEPA_{SEA} - BlendedEPA_{NE}) \times 22.0$$
-
-### 🧪 Practical Application
-
-By using this multiplier, the engine ensures that typical EPA differentials—which usually fall between `-0.20` and `+0.20`—result in spreads that align with professional sportsbook logic.
-
-- **Example:** A `+0.1` EPA advantage projects a **2.2-point** lead.
-- **Example:** A `+0.2` EPA advantage projects a **4.4-point** lead.
-
----
-
-# 🏆 Final Verdict: Super Bowl LX Prediction
-
-This is the high-level summary of the engine's output for **Super Bowl LX (February 8, 2026)** at Levi's Stadium. The following data points represent the final synthesis of our **70/30 Blended Model**.
-
-## 📊 The Numerical Signal
-
-| Metric                | Value                      |
-| --------------------- | -------------------------- |
-| **Market Spread**     | Seahawks -4.5              |
-| **Model "Fair Line"** | Seahawks -1.38             |
-| **Calculated Edge**   | **3.12 Points**            |
-| **Moneyline +EV**     | **+12.0% (Patriots +195)** |
-
-### 🧮 Edge Calculation
-
-The engine identified this signal by calculating the absolute variance between the market and our projected spread:
-
-$$Edge = \lvert ModelSpread - MarketSpread \rvert$$
-
-$$\lvert -1.38 - (-4.5) \rvert = 3.12$$
-
-> **Signal Status:** 🟢 **STRONG BUY** (Edge `> 2.0` points)
+| Variable | Required | Purpose |
+|---|---|---|
+| `THE_ODDS_API_KEY` | Optional | Live odds from The Odds API (free tier: 500 req/month) |
 
 ---
 
-## 🧠 Logic & Synthesis
+## Edge Confidence Score (ECS)
 
-The verdict is driven by three critical factors identified during the data ingestion process:
+Games are scored 0-100 based on:
+- Edge magnitude (0-35 pts)
+- Guard rail pass rate (0-25 pts)
+- Injury clarity (0-15 pts)
+- Weather stability (0-10 pts)
+- Line movement agreement (0-15 pts)
 
-### 1. The Stability Anchor (70%)
+**ECS ≥ 70** = high-confidence play. **ECS < 40** = skip.
 
-The 5-game rolling average favors the **New England Patriots'** defensive consistency. Their ability to limit explosive plays (Bottom 5 in EPA allowed on 20+ yard attempts) provides a high floor against the Seahawks' vertical passing game.
+## License
 
-### 2. Momentum Spike (30%)
-
-While the **Seattle Seahawks** showed a significant offensive surge in the Divisional and Championship rounds, their 3-game "heat" window was not enough to overcome the structural defensive advantages of the Patriots in our blended weighting.
-
-### 3. Injury Penalties
-
-The manual override was triggered for two specific key absences, which narrowed the efficiency gap significantly:
-
-- **Charles Cross (SEA - LT):** Absence resulted in a -0.06 EPA penalty to Seattle's pass protection efficiency.
-- **Secondary Depth:** Impact of the **Nick Emmanwori** and **Robert Spillane** status was normalized across the 3-game window.
-
-### 4. The Result
-
-The model projects a much tighter game than the current market consensus. With a 3.12-point Edge (surpassing our >2.0 signal threshold), the engine flags the Patriots +4.5 as a high-value opportunity.
-
----
-
-## ⚠️ Disclaimer
-
-This verdict is based on data available as of **February 5, 2026**. If active roster designations change prior to kickoff, the engine must be re-run to update the `InjuryPenalty` variable.
-
----
-
-## 📝 License
-
-This project is for educational and analytical purposes only. **Always bet responsibly.**
-
----
+Educational and analytical purposes only. **Always bet responsibly.**

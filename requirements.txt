@@ -1,5 +1,6 @@
 annotated-types==0.7.0
 appdirs==1.4.4
+beautifulsoup4>=4.12.0
 certifi==2026.1.4
 charset-normalizer==3.4.4
 cramjam==2.11.0
