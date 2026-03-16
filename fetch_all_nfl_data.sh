@@ -37,14 +37,19 @@ echo ""
 # 2. Team stats
 echo "  [2/5] Fetching team stats (ESPN)..."
 $PYTHON -c "
-from nfl_data_fetcher import fetch_team_stats, fetch_recent_stats, compute_sos
+from nfl_data_fetcher import fetch_team_stats, fetch_recent_stats, compute_sos, save_cache, _fetch_season_matchups
 import json, os
 stats = fetch_team_stats()
+save_cache(stats, 'nfl_stats_cache.json')
+print(f'        Season stats: {len(stats)} teams → nfl_stats_cache.json')
 recent = fetch_recent_stats()
-sos = compute_sos()
-print(f'        Season stats: {len(stats)} teams')
-print(f'        Recent stats: {len(recent)} teams')
-print(f'        SOS data:     {len(sos)} teams')
+save_cache(recent, 'nfl_stats_recent_cache.json')
+print(f'        Recent stats: {len(recent)} teams → nfl_stats_recent_cache.json')
+matchups = _fetch_season_matchups()
+sos = compute_sos(stats, matchups)
+with open('nfl_sos_cache.json', 'w') as f:
+    json.dump(sos, f, indent=2)
+print(f'        SOS data:     {len(sos)} teams → nfl_sos_cache.json')
 "
 echo ""
 
